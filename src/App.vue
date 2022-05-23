@@ -1,28 +1,54 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-  </div>
+    <v-app>
+        <SiteHeader />
+
+        <v-main>
+            <v-container fluid>
+                <keep-alive :exclude = "['LoginPage']">
+                    <router-view class="px-8" />
+                </keep-alive>
+            </v-container>
+        </v-main>
+
+        <SiteFooter />
+    </v-app>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import SiteHeader from "@/components/SiteHeader"
+import SiteFooter from "@/components/SiteFooter"
+import { USER_REQUEST } from "./store/actions/user";
 
 export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
+    name: "App",
+    components: {
+        SiteHeader,
+        SiteFooter
+    },
+    created: function () {
+        const token = localStorage.getItem('user-token')
+        if (token) {
+            this.axios.defaults.headers.common['Authorization'] = 'Bearer ' + token
+        }
+        
+        if (this.$store.getters.isAuthenticated && !(this.$store.getters.isProfileLoaded)) {
+            this.$store.dispatch(USER_REQUEST);
+        }
+    },
+    data: () => ({
+        //
+    }),
+};
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Montserrat', sans-serif !important;
+}
+.app {
+  padding: 100px;
 }
 </style>
