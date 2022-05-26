@@ -28,6 +28,7 @@
                             }"
                             @click:row="showUpcomingCourse"
                             style="cursor:pointer"
+                            item-key="item.id"
                         >
                             
                             <!-- Заголовки таблицы -->
@@ -79,6 +80,7 @@
                             }"
                             @click:row="showCurrentCourse"
                             style="cursor:pointer"
+                            item-key="item.id"
                         >
                             
                             <!-- Заголовки таблицы -->
@@ -130,6 +132,7 @@
                             }"
                             @click:row="showFinishedCourse"
                             style="cursor:pointer"
+                            item-key="item.id"
                         >
                             
                             <!-- Заголовки таблицы -->
@@ -318,6 +321,18 @@
                             </v-select>
                         </v-col>
                     </v-row>
+                    <!-- Кнопка добавления документа -->
+                    <v-row justify="center" v-if="files">
+                    <v-btn
+                        class="tile-glow-right"
+                        outlined
+                        color="#2f1a54"
+                        @click="uploadFile()"
+                        >
+                        Загрузить программу курса
+                        </v-btn>
+                    </v-row>   
+
                     <v-row justify="center">
                        <v-btn
                         class="tile-glow-right"
@@ -500,12 +515,23 @@
                                         </v-select>
                                     </v-col>
                                 </v-row>
+                                <v-row style="margin-top:0px; padding:10px">
+                                <template>
+                                <v-file-input
+                                    label="Выберите файл с программой курса"
+                                    v-model="files"
+                                    @change="selectFile"
+                                    color="#2f1a54"
+                                ></v-file-input>
+                                </template>
+                                </v-row>
+                                
                                 <v-row justify="center">
                                 <v-btn
                                     class="tile-glow-right"
                                     outlined
                                     color="#2f1a54"
-                                    @click="editCourse(upcomingId, upcomingName, upcomingHours, upcomingAmount, upcomingForm, upcomingStart, upcomingEnd,selectedTutor)"
+                                    @click="uploadFile(upcomingId, upcomingName, upcomingHours, upcomingAmount, upcomingForm, upcomingStart, upcomingEnd,selectedTutor, upcomingProgram)"
                                     >
                                     Изменить данные
                                     </v-btn>
@@ -667,12 +693,13 @@
                                         </v-select>
                                     </v-col>
                                 </v-row>
+                                
                                 <v-row justify="center">
                                 <v-btn
                                     class="tile-glow-right"
                                     outlined
                                     color="#2f1a54"
-                                    @click="editCourse(currentId, currentName, currentHours, currentAmount, currentForm, currentStart, currentEnd,selectedTutor)"
+                                    @click="editCourse(currentId, currentName, currentHours, currentAmount, currentForm, currentStart, currentEnd,selectedTutor, currentProgram)"
                                     >
                                     Изменить данные
                                     </v-btn>
@@ -852,12 +879,14 @@
                                         prevIcon: 'mdi-chevron-left',
                                         nextIcon: 'mdi-chevron-right'
                                     }"
+                                    item-key="item.id"
+                                    
                                 >
                                     <!-- Заголовки таблицы -->
                                     <template v-slot:header="{ props: { headers } }">
                                         <thead>
                                             <tr>
-                                                <th v-for="head6 in headers" v-bind:key="head6" id="tableHeader">
+                                                <th v-for="head6 in headers" v-bind:key="head6"  >
                                                     <span>{{head6.text}}</span>
                                                 </th>
                                             </tr>
@@ -897,12 +926,13 @@
                                         prevIcon: 'mdi-chevron-left',
                                         nextIcon: 'mdi-chevron-right'
                                     }"
+                                    item-key="item.id"
                                 >
                                     <!-- Заголовки таблицы -->
                                     <template v-slot:header="{ props: { headers } }">
                                         <thead>
                                             <tr>
-                                                <th v-for="head7 in headers" v-bind:key="head7" id="tableHeader">
+                                                <th v-for="head7 in headers" v-bind:key="head7">
                                                     <span>{{head7.text}}</span>
                                                 </th>
                                             </tr>
@@ -941,12 +971,13 @@
                                         prevIcon: 'mdi-chevron-left',
                                         nextIcon: 'mdi-chevron-right'
                                     }"
+                                    item-key="item.id"
                                 >
                                     <!-- Заголовки таблицы -->
                                     <template v-slot:header="{ props: { headers } }">
                                         <thead>
                                             <tr>
-                                                <th v-for="head2 in headers" v-bind:key="head2" id="tableHeader">
+                                                <th v-for="head2 in headers" v-bind:key="head2">
                                                     <span>{{head2.text}}</span>
                                                 </th>
                                             </tr>
@@ -1054,6 +1085,7 @@ export default {
             upcomingAmount: null,
             upcomingHours: null,
             upcomingForm: null,
+            upcomingProgram: null,
             currentId: -1,
             currentName: null,
             currentStart: null,
@@ -1061,6 +1093,7 @@ export default {
             currentAmount: null,
             currentHours: null,
             currentForm: null,
+            currentProgram: null,
             finishedId: -1,
             finishedName: null,
             finishedStart: null,
@@ -1068,18 +1101,24 @@ export default {
             finishedAmount: null,
             finishedHours: null,
             finishedForm: null,
+            finishedProgram: null,
             coursesHeaders: [
-                { text: 'Наименование курса', value: 'name', align: 'center' },
-                { text: 'Дата начала', value: 'start_date', align: 'center' },
-                { text: 'Дата окончания', value: 'end_date', align: 'center' },
+                { text: 'Название курса', value: 'name', align: 'left' },
+                { text: 'Дата начала', value: 'start_date', align: 'left' },
+                { text: 'Дата окончания', value: 'end_date', align: 'left' },
             ],
             listenersHeaders: [
-                { text: 'Имя', value: 'first_name', align: 'center' },
-                { text: 'Фамилия', value: 'last_name', align: 'center' },
-                { text: 'Отчество', value: 'patronymic', align: 'center' },
-                { text: 'Номер телефона', value: 'phone', align: 'center' },
-                { text: 'Процент успешности', value: 'percent', align: 'center' },
+                { text: 'Фамилия', value: 'last_name', align: 'left' },
+                { text: 'Имя', value: 'first_name', align: 'left' },
+                { text: 'Отчество', value: 'patronymic', align: 'left' },
+                { text: 'Процент успешности', value: 'percent', align: 'center', width: "50px"},
             ],
+
+            // Загрузка и выгрузка
+            loader: null,
+            loading: false,
+            currentFile: null,
+            files: null,
         }
     },
 
@@ -1094,6 +1133,73 @@ export default {
             this.upcomingId = -1,
             this.finishedId = -1
         },
+
+        // Загрузка и выгрузка файлов
+
+        forceFIleDownload(responce,link) {
+            var fileName = link;
+            var a = document.createElement("a");
+            document.body.appendChild(a);
+            var file = new Blob([responce.data], {type: 'application/pdf'});
+                var fileURL = window.URL.createObjectURL(file);
+                a.href = fileURL;
+                a.download = fileName;
+                a.click();
+        },
+
+        downloadDoc(link) {
+            this.loading = true
+
+            let fullURL = '/download'
+
+            this.axios.get(fullURL, {responseType: 'arraybuffer' , params: { name: link } })
+            .then((responce) => {
+                this.loading = false,
+                this.forceFIleDownload(responce,link)
+            })
+            .catch((error) => {
+              this.loading = false
+              this.dialogText = "Ошибка";
+              this.showDialog();
+              this.errors = error.data.detail
+              
+            })  
+        },
+
+        selectFile(file) {
+            this.currentFile = file;
+        },
+
+        uploadFile(id, name, hours, amount, form, start, end, tutor, program) { 
+            if(this.currentFile){
+                let fullURL = '/upload'
+                let formData = new FormData();
+                formData.append('file', this.currentFile);
+                this.axios.post(fullURL,
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                })
+                .then((responce) => {
+                this.editCourse(id, name, hours, amount, form, start, end, tutor, responce.data)
+                })
+                .catch((error) => {
+                this.dialogText = "Ошибка";
+                this.showDialog();
+                this.errors = error.data.detail
+                })  
+            }
+            else 
+                this.editCourse(id, name, hours, amount, form, start, end, tutor, program);
+            
+            this.currentFile = null
+            this.files = null
+         },
+
+        // Курсы
+
         addCourse: function (id) {
             let fullURL = '/courses/addCourse'
             
@@ -1130,7 +1236,7 @@ export default {
             })          
             
         },
-        editCourse (id, name, hours, price, form, start_date, end_date, tutor_id) {
+        editCourse (id, name, hours, price, form, start_date, end_date, tutor_id, link) {
             let fullURL = '/courses/editCourse'
             this.axios.post(fullURL, {
               id: id,
@@ -1141,7 +1247,7 @@ export default {
               start_date: start_date,
               end_date: end_date,
               tutor_id: tutor_id,
-              program: "",
+              program: link,
               schedule: "",
             })
             .then((responce) => {
@@ -1240,6 +1346,9 @@ export default {
             this.upcomingHours = list.hours
             this.upcomingForm = list.form
             this.selectedTutor = list.tutor_id
+            this.upcomingProgram = list.program
+            this.currentFile = null
+            this.files = null
             if (this.upcomingId!=-1){
                 let fullURL = '/listeners_courses/getCountListenerCourseByCourse/'+this.upcomingId+'/'
                 this.axios.get(fullURL)
@@ -1285,6 +1394,9 @@ export default {
             this.currentHours = list.hours
             this.currentForm = list.form
             this.selectedTutor = list.tutor_id
+            this.currentProgram = list.program
+            this.currentFile = null
+            this.files = null
             if (this.currentId!=-1){
                 let fullURL = '/listeners_courses/getCountListenerCourseByCourse/'+this.currentId+'/'
                 this.axios.get(fullURL)
@@ -1330,6 +1442,9 @@ export default {
             this.finishedHours = list.hours
             this.finishedForm = list.form
             this.selectedTutor = list.tutor_id
+            this.finishedProgram = list.program
+            this.currentFile = null
+            this.files = null
             if (this.finishedId!=-1){
                 let fullURL = '/listeners_courses/getCountListenerCourseByCourse/'+this.finishedId+'/'
                 this.axios.get(fullURL)
@@ -1523,5 +1638,5 @@ export default {
    box-shadow: 0 0 10px #2f1a54;
    transition-duration: 0.3s;
 }
-  
+
 </style>

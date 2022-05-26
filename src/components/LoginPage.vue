@@ -89,7 +89,6 @@ import {validationMixin} from "vuelidate";
 import {required} from "vuelidate/lib/validators";
 import {AUTH_REQUEST} from "/src/store/actions/auth"
 
-// C:\Users\BlackCat\Desktop\Finance\finance_client\src\store
 
 export default {
     name: "LoginPage",

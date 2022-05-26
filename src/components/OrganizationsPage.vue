@@ -15,6 +15,7 @@
                     :items="organizations.rows"
                     @click:row="showOrganization"
                     style="cursor:pointer"
+                    item-key="item.id"
                     >
                     <template v-slot:top>
                         <v-text-field
@@ -193,9 +194,8 @@
 
 
                         <!-- Новый курс -->
-                        <v-card-text class="cardText" style="margin-top:20px">
+                        <v-card-text class="cardText" style="margin-top:40px">
                             <v-row >
-                                <v-col cols="11">
                                     <v-select
                                         color="#4b2a86"
                                         :items="courseTypes.rows"
@@ -206,28 +206,11 @@
                                         v-model="courseSelected"
                                         item-text="name"
                                         item-value="id"
+                                        item-key="item.id"
                                     ></v-select>
-                                </v-col>
-
-                                <!-- Кнопка добавления курса -->
-                                <v-col cols="1">
-                                    <v-tooltip bottom>
-                                        <template v-slot:activator="{ on, attrs }">
-                                            <v-btn 
-                                                v-bind="attrs"
-                                                v-on="on"
-                                                icon
-                                                @click="addCourse(courseSelected, selectedUsers)" 
-                                                 id="addDoc"
-                                            > 
-                                                <v-icon size="45">mdi-plus-box</v-icon>
-                                            </v-btn>
-                                        </template>
-                                        <span>Добавить</span>
-                                    </v-tooltip>
-                                </v-col>
-                            </v-row>
-                            <template v-if="courseSelected" >
+                             </v-row>
+                             <v-row style="margin-top:20px">
+                             <template v-if="courseSelected" >
                                 <v-data-table
                                     :search="selected"
                                     :headers="usersHeaders"
@@ -246,7 +229,31 @@
                                         ></v-text-field>
                                     </template>      
                                 </v-data-table>
-                            </template>
+                            </template>    
+                            </v-row>    
+                                <v-row style="margin-top:30px">
+                                <template v-if="courseSelected">
+                                    <v-file-input
+                                        label="Выберите соглашение"
+                                        v-model="files"
+                                        @change="selectFile"
+                                        color="#2f1a54"
+                                    ></v-file-input>
+                                </template>
+                                </v-row>
+                                <!-- Кнопка добавления документа -->
+                                <v-row justify="center" v-if="files">
+                                <v-btn
+                                    class="tile-glow-right"
+                                    outlined
+                                    color="#2f1a54"
+                                    @click="uploadFile(courseSelected, selectedUsers)"
+                                    >
+                                    Загрузить соглашение
+                                    </v-btn>
+                                </v-row>                                                
+                           
+                            
                         </v-card-text>
                         </v-card>
                     </div>
@@ -270,6 +277,7 @@
                                     prevIcon: 'mdi-chevron-left',
                                     nextIcon: 'mdi-chevron-right'
                                 }"
+                                item-key="item.id"
                             >
                                 <!-- Заголовки таблицы -->
                                 <template v-slot:header="{ props: { headers } }">
@@ -283,9 +291,24 @@
                                 </template>
 
                                <!-- Договор -->
-                                <template v-slot:[`item.agreements_link`]>
+                                <template v-slot:[`item.agreements_link`] ="{ item }">
                                     <v-row justify="center" >
-                                        <v-icon size=40 class="downloadedDoc" id="tableClicked"> mdi-file-pdf-outline </v-icon>
+                                         <v-tooltip bottom>
+                                             <template v-slot:activator="{ on, attrs }">
+                                                 <v-btn 
+                                                     v-bind="attrs"
+                                                     v-on="on"
+                                                     icon
+                                                     @click = "downloadDoc(item.agreements_link)"
+                                                     :loading="loading"
+                                                     :disabled="loading"
+                                                     color="#2f1a54"
+                                                 > 
+                                                     <v-icon size="40">mdi-file-pdf-outline</v-icon>
+                                                 </v-btn>
+                                             </template>
+                                         <span>Просмотр договора</span>
+                                         </v-tooltip>
                                     </v-row>
                                 </template>
 
@@ -413,6 +436,13 @@ export default {
             agreements: null,
             courses: null,
 
+            // Загрузка и выгрузка
+            loader: null,
+            loading: false,
+            files:null,
+            currentFile: null,
+            newDocName: null,
+
         }
     },
      methods: {
@@ -421,6 +451,67 @@ export default {
             this.dialog = true;
             setTimeout(() => (this.dialog = false), 4000)
         },
+
+        // Загрузка и выгрузка файлов
+
+        forceFIleDownload(responce,link) {
+            var fileName = link;
+            var a = document.createElement("a");
+            document.body.appendChild(a);
+            var file = new Blob([responce.data], {type: 'application/pdf'});
+                var fileURL = window.URL.createObjectURL(file);
+                a.href = fileURL;
+                a.download = fileName;
+                a.click();
+        },
+
+        downloadDoc(link) {
+            this.loading = true
+
+            let fullURL = '/download'
+
+            this.axios.get(fullURL, {responseType: 'arraybuffer' , params: { name: link } })
+            .then((responce) => {
+                this.loading = false,
+                this.forceFIleDownload(responce,link)
+            })
+            .catch((error) => {
+              this.loading = false
+              this.dialogText = "Ошибка";
+              this.showDialog();
+              this.errors = error.data.detail
+              
+            })  
+        },
+
+        selectFile(file) {
+            this.currentFile = file;
+        },
+
+         uploadFile(selected, users) { 
+            let fullURL = '/upload'
+            let formData = new FormData();
+            formData.append('file', this.currentFile);
+            this.axios.post(fullURL,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+            })
+            .then((responce) => {
+              this.newDocName = responce.data;
+              this.addCourse(selected, users, responce.data);
+            })
+            .catch((error) => {
+              this.dialogText = "Ошибка";
+              this.showDialog();
+              this.errors = error.data.detail
+            })  
+            this.files = null   
+            this.currentFile = null
+            this.newDocName = null
+         },
 
         // Организации
 
@@ -558,18 +649,21 @@ export default {
             })  
 
         },
-        addCourse: function (id, selectedUsers) {
+        addCourse: function (id, selectedUsers, link) {
             if (id!=null) {
                 if (this.selectedUsers.length > 0){
                     let fullURL = '/agreements/addAgreement/'
                     this.axios.post(fullURL, {
-                        link: String(Math.random().toString(36).substring(2, 15))+'.pdf',
+                        link: link,
                         status: 0,
                         organization_id: this.currentId,
                         course_id: id,
                         partnership_agreement_id: 0
                     })
                     .then((responce) => {
+                    this.selectedCourse = null;
+                    this.newDocName = null
+                    this.results = responce.data;
                     this.results = responce.data;
                     let amount = null;
                         this.courseTypes.rows.forEach(element => {
@@ -610,6 +704,9 @@ export default {
                         })
                     })
                     .catch((error) => {
+                    this.selectedCourse = null;
+                    this.newDocName = null
+                    this.results = responce.data;
                     this.dialogText = "Ошибка";
                     this.errors = error.data.detail
                     })  

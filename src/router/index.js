@@ -6,7 +6,8 @@ import UsersPage from "../components/UsersPage";
 import TutorPage from "../components/TutorPage";
 import OrganizationsPage from "../components/OrganizationsPage";
 import CoursesPage from "../components/CoursesPage"; 
-import LoginPage from '../components/LoginPage.vue'
+import LoginPage from '../components/LoginPage.vue';
+import CalendarPage from '../components/CalendarPage.vue';
 
 import store from '/src/store/index'
 
@@ -67,6 +68,11 @@ const routes = [
       name: 'users',
       component: UsersPage,
       beforeEnter: ifAdmin
+  },
+  {
+      path: '/calendar',
+      name: 'calendar',
+      component: CalendarPage,
   },
   {
     path: '/tutor',

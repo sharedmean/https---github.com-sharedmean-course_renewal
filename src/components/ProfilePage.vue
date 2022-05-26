@@ -261,37 +261,41 @@
 
 
                     <!-- Основная информация -->
-                    <v-card-text id="cardText" style="margin-top:20px">
+                    <v-card-text id="cardText" style="margin-top:40px">
                         <v-row>
-                            <v-col cols="11">
                                 <v-select
                                     color="#4b2a86"
                                     :items="docTypes"
                                     dense
                                     outlined
-                                    label="Новый документ"
+                                    label="Тип документа"
                                     hide-details
                                     v-model="selected"
-                                ></v-select>
-                            </v-col>
-
-                            <!-- Кнопка добавления документа -->
-                            <v-col cols="1">
-                                <v-tooltip bottom>
-                                    <template v-slot:activator="{ on, attrs }">
-                                        <v-btn 
-                                            v-bind="attrs"
-                                            v-on="on"
-                                            icon
-                                            @click="addDoc(selected)" 
-                                        > 
-                                            <v-icon id="addDoc" size="45">mdi-plus-box</v-icon>
-                                        </v-btn>
-                                    </template>
-                                    <span>Добавить</span>
-                                </v-tooltip>
-                            </v-col>
+                                ></v-select>                            
                         </v-row>
+                        
+                        <v-row style="margin-top:30px">
+                        <template v-if="selected">
+                        <v-file-input
+                            label="Выберите документ"
+                            v-model="files"
+                            @change="selectFile"
+                            color="#2f1a54"
+                        ></v-file-input>
+                        </template>
+                        </v-row>
+                        <!-- Кнопка добавления документа -->
+                        <v-row justify="center"  v-if="files">
+                        <v-btn
+                            class="tile-glow-right"
+                            outlined
+                            color="#2f1a54"
+                            @click="uploadFile(selected)"
+                            >
+                            Отправить на проверку
+                            </v-btn>
+                        </v-row>    
+                            
                     </v-card-text>
                     </v-card>
 
@@ -421,10 +425,41 @@ export default {
                 'Сертификат'
             ],
             
+            files:null,
+            currentFile: null,
+            newDocName: null,
         }
     },
 
     methods: {
+        selectFile(file) {
+        this.currentFile = file;
+        },
+
+         uploadFile(selected) { 
+            let fullURL = '/upload'
+            let formData = new FormData();
+            formData.append('file', this.currentFile);
+            this.axios.post(fullURL,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+            })
+            .then((responce) => {
+              this.newDocName = responce.data;
+              this.addDoc(selected, responce.data)
+            })
+            .catch((error) => {
+              this.dialogText = "Ошибка";
+              this.showDialog();
+              this.errors = error.data.detail
+            })  
+            this.files = null   
+            this.currentFile = null
+            this.newDocName = null
+         },
 
         showDialog() {
             this.dialog = true;
@@ -463,21 +498,21 @@ export default {
               this.errors = error.data.detail
             })  
         },
-        addDoc: function (name) {
+        addDoc: function (name, link) {
             let fullURL = '/docs/addDoc/'
-            
             this.axios.post(fullURL, {
                 name: name,
-                link: "knjcfhjedhy.pdf",
+                link: link,
                 status: 0,
                 user_id: this.currentId
             })
             .then((responce) => {
-              this.results = responce.data;
               this.selected = null;
+              this.newDocName = null
+              this.results = responce.data;
               this.getDocs();
               this.dialogText = "Документ был отправлен на проверку";
-              this.showDialog();
+              this.showDialog();     
             })
             .catch((error) => {
               this.selected = null;
@@ -604,6 +639,14 @@ export default {
     #addDoc:hover {
         cursor: pointer;
         color: #bdbbd0;
+    }
+
+    .tile-glow-right{
+        margin:20px;
+    }
+    .tile-glow-right:hover{
+    box-shadow: 0 0 10px #2f1a54;
+    transition-duration: 0.3s;
     }
 
 </style>

@@ -14,6 +14,7 @@
                             :items="users.rows"
                             @click:row="showListener"
                             style="cursor:pointer"
+                            item-key="item.id"
                             >
                             <template v-slot:top>
                                 <v-text-field
@@ -98,7 +99,7 @@
                             ></v-text-field>
                             </v-row>
                         </v-col>
-                        <v-col cols=5 style="margin-left:40px; margin-right:10px">
+                        <v-col cols=5 style="margin-left:20px; margin-right:10px">
                             <v-row>
                             <v-text-field
                                 label="Пароль"
@@ -138,13 +139,13 @@
                                 label="Слушатель"
                                 value="3"
                                 color="#4b2a86"
-                                style="margin-right:100px"
+                                style="margin-right:70px"
                             ></v-radio>
                             <v-radio
                                 label="Преподаватель"
                                 value="2"
                                 color="#4b2a86"
-                                style="margin-right:100px"
+                                style="margin-right:70px"
                             ></v-radio>
                             <v-radio
                                 label="Администратор"
@@ -170,7 +171,7 @@
                 </div>
               
                 <!-- Изменение данных слушателя -->
-                <div v-if="!newIsShow" v-key="currentId">
+                <div v-if="!newIsShow" v-key="currentId" item-key="currentId">
                     <v-row justify="right">
                                 <v-col cols=12 id="closeInfo">
                                         <template>
@@ -247,7 +248,7 @@
                                 ></v-text-field>
                                 </v-row>
                             </v-col>
-                            <v-col cols=5 style="margin-left:40px; margin-right:10px">
+                            <v-col cols=5 style="margin-left:20px; margin-right:10px">
                                 <v-row>
                                 <v-text-field
                                     label="Пароль"
@@ -284,13 +285,13 @@
                                     label="Слушатель"
                                     value="3"
                                     color="#4b2a86"
-                                    style="margin-right:100px"
+                                    style="margin-right:70px"
                                 ></v-radio>
                                 <v-radio
                                     label="Преподаватель"
                                     value="2"
                                     color="#4b2a86"
-                                    style="margin-right:100px"
+                                    style="margin-right:70px"
                                 ></v-radio>
                                 <v-radio
                                     label="Администратор"
@@ -339,19 +340,23 @@
                                         <tr
                                             v-for="doc in showDocsStatus0"
                                             :key="doc.id"
+                                            item-key="doc.id"
                                         >
                                             <td>{{ doc.name }}</td>
                                             <td class="tableClicked">
                                                 <v-tooltip bottom>
                                                     <template v-slot:activator="{ on, attrs }">
-                                                        <v-icon
-                                                        class="downloadedDoc"
-                                                        size=40
-                                                        v-bind="attrs"
-                                                        v-on="on"
-                                                        >
-                                                        mdi-file-pdf-outline
-                                                        </v-icon>
+                                                        <v-btn 
+                                                            v-bind="attrs"
+                                                            v-on="on"
+                                                            icon
+                                                            @click = "downloadDoc(doc.link)"
+                                                            :loading="loading"
+                                                            :disabled="loading"
+                                                            color="#2f1a54"
+                                                        > 
+                                                            <v-icon size="40">mdi-file-pdf-outline</v-icon>
+                                                        </v-btn>
                                                     </template>
                                                 <span>Просмотр файла</span>
                                                 </v-tooltip>
@@ -403,37 +408,41 @@
 
 
                         <!-- Основная информация -->
-                        <v-card-text class="cardText" style="margin-top:20px">
+                        <v-card-text id="cardText" style="margin-top:40px">
                             <v-row>
-                                <v-col cols="11">
                                     <v-select
                                         color="#4b2a86"
                                         :items="docTypes"
                                         dense
                                         outlined
-                                        label="Новый документ"
+                                        label="Тип документа"
                                         hide-details
                                         v-model="selected"
-                                    ></v-select>
-                                </v-col>
-
-                                <!-- Кнопка добавления документа -->
-                                <v-col cols="1">
-                                    <v-tooltip bottom>
-                                        <template v-slot:activator="{ on, attrs }">
-                                            <v-btn 
-                                                v-bind="attrs"
-                                                v-on="on"
-                                                icon
-                                                @click="addDoc(selected)" 
-                                            > 
-                                                <v-icon id="addDoc" size="45">mdi-plus-box</v-icon>
-                                            </v-btn>
-                                        </template>
-                                        <span>Добавить</span>
-                                    </v-tooltip>
-                                </v-col>
+                                    ></v-select>                            
                             </v-row>
+                            
+                            <v-row style="margin-top:30px">
+                            <template v-if="selected">
+                            <v-file-input
+                                label="Выберите документ"
+                                v-model="files"
+                                @change="selectFile"
+                                color="#2f1a54"
+                            ></v-file-input>
+                            </template>
+                            </v-row>
+                            <!-- Кнопка добавления документа -->
+                            <v-row justify="center" v-if="files">
+                            <v-btn
+                                class="tile-glow-right"
+                                outlined
+                                color="#2f1a54"
+                                @click="uploadFile(selected, 'doc')"
+                                >
+                                Загрузить документ
+                                </v-btn>
+                            </v-row>    
+                                
                         </v-card-text>
                         </v-card>
                     </div>
@@ -450,6 +459,7 @@
                                 hide-default-header
                                 :items-per-page="5"
                                 class="elevation-0"
+                                item-key="item.id"
                                 :footer-props="{
                                     showFirstLastPage: true,
                                     firstIcon: 'mdi-chevron-double-left',
@@ -488,14 +498,13 @@
                     <v-card-title class="cardTitle">Курсы</v-card-title>
                     <!-- Добавить курс слушателю -->
                     <div>
-                        <v-card style="margin:50px; margin-top:20px; margin-bottom:0px" class="mx-auto">
+                        <v-card style="padding:20px; margin:50px; margin-top:20px; margin-bottom:0px" class="mx-auto">
                         <v-card-subtitle class="cardSubtitle">Оформление на курс</v-card-subtitle>
 
 
                         <!-- Основная информация -->
-                        <v-card-text class="cardText" style="margin-top:20px">
+                        <v-card-text class="cardText" style="margin-top:40px">
                             <v-row>
-                                <v-col cols="11">
                                     <v-select
                                         color="#4b2a86"
                                         :items="courseTypes.rows"
@@ -506,26 +515,32 @@
                                         v-model="selectedCourse"
                                         item-text="name"
                                         item-value="id"
+                                        item-key="item.id"
                                     ></v-select>
-                                </v-col>
-
-                                <!-- Кнопка добавления документа -->
-                                <v-col cols="1">
-                                    <v-tooltip bottom>
-                                        <template v-slot:activator="{ on, attrs }">
-                                            <v-btn 
-                                                v-bind="attrs"
-                                                v-on="on"
-                                                icon
-                                                @click="addCourse(selectedCourse)" 
-                                            > 
-                                                <v-icon id="addDoc" size="45">mdi-plus-box</v-icon>
-                                            </v-btn>
-                                        </template>
-                                        <span>Добавить</span>
-                                    </v-tooltip>
-                                </v-col>
+                                    
                             </v-row>
+                            
+                            <v-row style="margin-top:30px">
+                                <template v-if="selectedCourse">
+                                <v-file-input
+                                    label="Выберите соглашение"
+                                    v-model="files"
+                                    @change="selectFile"
+                                    color="#2f1a54"
+                                ></v-file-input>
+                                </template>
+                            </v-row>
+                            <!-- Кнопка добавления документа -->
+                            <v-row justify="center" v-if="files">
+                            <v-btn
+                                class="tile-glow-right"
+                                outlined
+                                color="#2f1a54"
+                                @click="uploadFile(selectedCourse, 'agreement')"
+                                >
+                                Загрузить соглашение
+                                </v-btn>
+                            </v-row>    
                         </v-card-text>
                         </v-card>
                     </div>
@@ -542,6 +557,7 @@
                                 hide-default-header
                                 :items-per-page="5"
                                 class="elevation-0"
+                                item-key="item.id"
                                 :footer-props="{
                                     showFirstLastPage: true,
                                     firstIcon: 'mdi-chevron-double-left',
@@ -562,14 +578,24 @@
                                 </template>
 
                                <!-- Договор -->
-                                <template v-slot:[`item.agreements_link`]>
+                                <template v-slot:[`item.agreements_link`] ="{ item }">
                                     <v-row justify="center" >
-                                        <v-tooltip bottom>
-                                            <template v-slot:activator="{ on }">
-                                                <v-icon size=40 class="downloadedDoc tableClicked" v-on="on"> mdi-file-pdf-outline </v-icon>  
-                                            </template>
-                                            <span>Просмотр договора</span>
-                                        </v-tooltip>
+                                         <v-tooltip bottom>
+                                             <template v-slot:activator="{ on, attrs }">
+                                                 <v-btn 
+                                                     v-bind="attrs"
+                                                     v-on="on"
+                                                     icon
+                                                     @click = "downloadDoc(item.agreements_link)"
+                                                     :loading="loading"
+                                                     :disabled="loading"
+                                                     color="#2f1a54"
+                                                 > 
+                                                     <v-icon size="40">mdi-file-pdf-outline</v-icon>
+                                                 </v-btn>
+                                             </template>
+                                         <span>Просмотр договора</span>
+                                         </v-tooltip>
                                     </v-row>
                                 </template>
 
@@ -686,20 +712,24 @@
                                                 <tr
                                                     v-for="doc in docsStatus0.rows"
                                                     :key="doc.id"
+                                                    item-key="doc.id"
                                                 >
                                                     <td>{{ doc.last_name + " " + doc.first_name + " " + doc.patronymic }}</td>
                                                     
                                                     <td class="tableClicked">
                                                         <v-tooltip bottom>
                                                             <template v-slot:activator="{ on, attrs }">
-                                                                <v-icon
-                                                                class="downloadedDoc"
-                                                                size=40
-                                                                v-bind="attrs"
-                                                                v-on="on"
-                                                                >
-                                                                mdi-file-pdf-outline
-                                                                </v-icon>
+                                                                <v-btn 
+                                                                    v-bind="attrs"
+                                                                    v-on="on"
+                                                                    icon
+                                                                    @click = "downloadDoc(doc.link)"
+                                                                    :loading="loading"
+                                                                    :disabled="loading"
+                                                                    color="#2f1a54"
+                                                                > 
+                                                                    <v-icon size="40">mdi-file-pdf-outline</v-icon>
+                                                                </v-btn>
                                                             </template>
                                                         <span> {{ doc.name }} </span>
                                                         </v-tooltip>
@@ -785,9 +815,9 @@ export default {
             courses: null,
             docsStatus0: null,
             headers: [
-                { text: 'Имя', value: 'first_name', align: 'center' },
-                { text: 'Фамилия', value: 'last_name', align: 'center' },
-                { text: 'Отчество', value: 'patronymic', align: 'center' },
+                { text: 'Фамилия', value: 'last_name', align: 'left' },
+                { text: 'Имя', value: 'first_name', align: 'left' }, 
+                { text: 'Отчество', value: 'patronymic', align: 'left' },
                 { text: 'Мобильный телефон', value: 'phone', align: 'center' }
             ],
             downloadedDocsHeadersStatus0: [
@@ -836,10 +866,17 @@ export default {
             newCourseId: -1,
             addDocStatus: 0,
             nextListenerId: 11,
+
+            // Загрузка и выгрузка
+            loader: null,
+            loading: false,
+            files:null,
+            currentFile: null,
+            newDocName: null,
         }
     },
      methods: {
-         showDialog() {
+        showDialog() {
             this.dialog = true;
             setTimeout(() => (this.dialog = false), 4000)
         },
@@ -852,6 +889,70 @@ export default {
         createPassword() {
             this.currentPassword = Math.random().toString(36).substring(2, 15);
         },
+
+        // Загрузка и выгрузка файлов
+
+        forceFIleDownload(responce,link) {
+            var fileName = link;
+            var a = document.createElement("a");
+            document.body.appendChild(a);
+            var file = new Blob([responce.data], {type: 'application/pdf'});
+                var fileURL = window.URL.createObjectURL(file);
+                a.href = fileURL;
+                a.download = fileName;
+                a.click();
+        },
+
+        downloadDoc(link) {
+            this.loading = true
+
+            let fullURL = '/download'
+
+            this.axios.get(fullURL, {responseType: 'arraybuffer' , params: { name: link } })
+            .then((responce) => {
+                this.loading = false,
+                this.forceFIleDownload(responce,link)
+            })
+            .catch((error) => {
+              this.loading = false
+              this.dialogText = "Ошибка";
+              this.showDialog();
+              this.errors = error.data.detail
+              
+            })  
+        },
+
+        selectFile(file) {
+            this.currentFile = file;
+        },
+
+         uploadFile(selected, type) { 
+            let fullURL = '/upload'
+            let formData = new FormData();
+            formData.append('file', this.currentFile);
+            this.axios.post(fullURL,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+            })
+            .then((responce) => {
+              this.newDocName = responce.data;
+              if (type=="doc")
+                this.addDoc(selected, responce.data);
+              else if(type=="agreement")
+                this.addCourse(selected, responce.data);
+            })
+            .catch((error) => {
+              this.dialogText = "Ошибка";
+              this.showDialog();
+              this.errors = error.data.detail
+            })  
+            this.files = null   
+            this.currentFile = null
+            this.newDocName = null
+         },
 
         // Документы
 
@@ -940,23 +1041,27 @@ export default {
               this.errors = error.data.detail
             })  
         },
-        addDoc: function (name) {
+        addDoc: function (name, link) {
             if(name!=null){
                 let fullURL = '/docs/addDoc/'
             
                 this.axios.post(fullURL, {
                     name: name,
-                    link: "knjcfhjedhy.pdf",
+                    link: link,
                     status: 1,
                     user_id: this.currentId
                 })
                 .then((responce) => {
+                this.selected = null;
+                this.newDocName = null
                 this.results = responce.data;
                 this.getDocs();
                 this.getDocsStatus0();
                 this.dialogText = "Документ успешно добавлен";
                 })
                 .catch((error) => {
+                this.selected = null;
+                this.newDocName = null
                 this.errors = error.data.detail
                 this.dialogText = "Ошибка";
                 })  
@@ -1007,17 +1112,19 @@ export default {
             })  
 
         },
-        addCourse: function (id) {
+        addCourse: function (id, link) {
             if (id!=null){
                 let fullURL = '/agreements/addAgreement/'
                 this.axios.post(fullURL, {
-                    link: String(Math.random().toString(36).substring(2, 15))+'.pdf',
+                    link: link,
                     status: 0,
                     organization_id: 0,
                     course_id: id,
                     partnership_agreement_id: 0
                 })
                 .then((responce) => {
+                    this.selectedCourse = null;
+                    this.newDocName = null
                     this.results = responce.data;
                     let amount = null;
                     this.courseTypes.rows.forEach(element => {
@@ -1219,7 +1326,8 @@ export default {
       this.getUsers()
       this.getCoursesTypes()
       this.getDocsStatus0()
-    }
+    },
+    
 }
 </script>
 
