@@ -13,7 +13,7 @@
                     <v-card-subtitle id="cardSubtitle">Предстоящие и текущие курсы</v-card-subtitle>
                     <v-divider color="white"></v-divider>
 
-                    <v-card-text id="cardText" v-if="this.havingCurrentCourses==1">
+                    <v-card-text id="cardText" v-if="this.havingCurrentCourses">
                         
                         <v-data-table
                             :headers="currentCoursesHeaders"
@@ -28,6 +28,9 @@
                                 prevIcon: 'mdi-chevron-left',
                                 nextIcon: 'mdi-chevron-right'
                             }"
+                            @click:row="showCourse"
+                            style="cursor:pointer"
+                            item-key="item.id"
                         >
                             
                             <!-- Заголовки таблицы -->
@@ -42,19 +45,24 @@
                             </template>
                             
                             <!-- Программа курса -->
-                            <template v-slot:[`item.program`]>
+                            <template v-slot:[`item.program`] ="{ item }">
                                 <v-row justify="center">
+                                   
                                     <v-tooltip bottom>
-                                    <template v-slot:activator="{ on, attrs }">
-                                        <v-btn 
-                                            v-bind="attrs"
-                                            v-on="on"
-                                            icon
-                                        > 
-                                            <v-icon size=40 id="downloadedDoc"> mdi-file-pdf-outline </v-icon>
-                                        </v-btn>
-                                    </template>
-                                    <span>Просмотр документа</span>
+                                             <template v-slot:activator="{ on, attrs }">
+                                                 <v-btn 
+                                                     v-bind="attrs"
+                                                     v-on="on"
+                                                     icon
+                                                     @click = "downloadDoc(item.program)"
+                                                     :loading="loading"
+                                                     :disabled="loading"
+                                                     color="#2f1a54"
+                                                 > 
+                                                     <v-icon size="40">mdi-file-pdf-outline</v-icon>
+                                                 </v-btn>
+                                             </template>
+                                         <span>Просмотр договора</span>
                                     </v-tooltip>
                                 </v-row>
                             </template>
@@ -107,6 +115,9 @@
                                 prevIcon: 'mdi-chevron-left',
                                 nextIcon: 'mdi-chevron-right'
                             }"
+                            @click:row="showCourse"
+                            style="cursor:pointer"
+                            item-key="item.id"
                         >
                             <!-- Заголовки таблицы -->
                             <template v-slot:header="{ props: { headers } }">
@@ -140,7 +151,7 @@
 
 
                             <!-- Оценки -->
-                            <template v-slot:[`item.score`]>
+                            <!--<template v-slot:[`item.score`]>
                                 <v-row justify="center">
                                     <v-tooltip bottom>
                                     <template v-slot:activator="{ on, attrs }">
@@ -155,7 +166,7 @@
                                     <span>Просмотр документа</span>
                                     </v-tooltip>
                                 </v-row>
-                            </template>
+                            </template>-->
 
 
                             <!-- Сертификат -->
@@ -208,13 +219,13 @@
 
             <!-- Документы -->
             <v-col cols="6">
-                <div v-key="docs.rows"> 
+                <div  v-if="!currentCourseId"> 
                 <v-card style="padding:20px; margin:50px; margin-bottom:0px" class="mx-auto">
                     <v-card-title id="cardTitle">Документы</v-card-title>
 
 
                     <!-- Информация об отклонённых документах -->
-                    <div v-if="this.havingDocs==1">
+                    <div v-if="this.docs">
                         <div v-if="this.showCancelledDocs.length">
 
                             <v-card style="padding:20px; margin:50px; margin-top:20px; margin-bottom:0px" class="mx-auto">
@@ -238,6 +249,8 @@
                                                                 v-bind="attrs"
                                                                 v-on="on"
                                                                 icon
+                                                                :loading="loading"
+                                                                :disabled="loading"
                                                             > 
                                                                 <v-icon id="deleteDoc" size=30 @click="deleteDoc(doc)">mdi-delete</v-icon>
                                                             </v-btn>
@@ -271,6 +284,7 @@
                                     label="Тип документа"
                                     hide-details
                                     v-model="selected"
+
                                 ></v-select>                            
                         </v-row>
                         
@@ -290,7 +304,7 @@
                             class="tile-glow-right"
                             outlined
                             color="#2f1a54"
-                            @click="uploadFile(selected)"
+                            @click="uploadDocument(selected)"
                             >
                             Отправить на проверку
                             </v-btn>
@@ -305,7 +319,7 @@
 
                     
                         <!-- Основная информация -->
-                        <v-card-text id="cardText" v-if="this.havingDocs==1">
+                        <v-card-text id="cardText" v-if="docs">
                             <v-data-table
                                 :headers="downloadedDocsHeaders"
                                 :items="docs.rows"
@@ -319,6 +333,7 @@
                                     prevIcon: 'mdi-chevron-left',
                                     nextIcon: 'mdi-chevron-right'
                                 }"
+                                item-key="item.id"
                             >
                                 <!-- Заголовки таблицы -->
                                 <template v-slot:header="{ props: { headers } }">
@@ -340,7 +355,7 @@
 
                             </v-data-table>
                         </v-card-text>
-                        <v-card-text id="cardText" v-if="this.havingDocs==0">
+                        <v-card-text id="cardText" v-if="!docs">
                             <v-simple-table>
                                 <template v-slot:default>                        
                                     <tbody id="simpleTable">
@@ -354,6 +369,251 @@
                     </v-card>
                 </v-card>
                 </div>
+                <div v-key="currentCourseId" v-if="currentCourseId">
+                    <v-card style="padding:20px; margin:50px; margin-bottom:0px" class="mx-auto">
+                    <v-card-title id="cardTitle">Курс "{{ currentCourseName }}"</v-card-title> 
+
+                    <v-row justify="right" >
+                        <v-col cols=12 id="closeInfo">
+                                <template>
+                                    <v-btn 
+                                        class="tile-glow-right2"
+                                        text-color="#2f1a54" 
+                                        color="white"                                       
+                                        block
+                                        @click="currentCourseId=null">
+                                        Свернуть
+                                    </v-btn>
+                                </template>
+                        </v-col>
+                    </v-row>
+                    
+                    
+
+                    <v-card style="padding:20px; margin:50px; margin-top:0px; margin-bottom:0px" class="mx-auto">
+                    <!-- Домашняя работа -->
+                    <v-card-subtitle id="cardSubtitle">Задания</v-card-subtitle>
+
+        
+                    <!-- Основная информация -->
+                    <v-card-text id="cardText" v-if="homeworkInfo">
+                        <v-data-table
+                            :headers="homeworkHeaders"
+                            :items="this.homeworkInfo.rows"
+                            hide-default-header
+                            :items-per-page="15"
+                            class="elevation-0"
+                            :footer-props="{
+                                showFirstLastPage: true,
+                                firstIcon: 'mdi-chevron-double-left',
+                                lastIcon: 'mdi-chevron-double-right',
+                                prevIcon: 'mdi-chevron-left',
+                                nextIcon: 'mdi-chevron-right'
+                            }"
+                            item-key="item.id"
+                        >
+                            <!-- Заголовки таблицы -->
+                            <template v-slot:header="{ props: { headers } }">
+                                <thead>
+                                    <tr>
+                                        <th v-for="head in headers" v-bind:key="head" id="tableHeader">
+                                            <span>{{head.text}}</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                            </template>
+
+                           <!-- Процент успешности -->
+                            <template v-slot:[`item.percent`]="{ item }">
+                                <v-progress-circular
+                                    :rotate="360"
+                                    :size="50"
+                                    :width="7"
+                                    :value="item.percent"
+                                    color="#4b2a86"
+                                    class="my-1"
+                                >
+                                    {{ item.percent }}
+                                </v-progress-circular>
+                            </template>
+
+
+                            <!-- Программа курса -->
+                            <template v-slot:[`item.link`] ="{ item }">
+                                <v-row justify="center">
+                                   
+                                    <v-tooltip bottom>
+                                             <template v-slot:activator="{ on, attrs }">
+                                                 <v-btn 
+                                                     v-bind="attrs"
+                                                     v-on="on"
+                                                     icon
+                                                     @click = "downloadDoc(item.link)"
+                                                     :loading="loading"
+                                                     :disabled="loading"
+                                                     color="#2f1a54"
+                                                 > 
+                                                     <v-icon size="40">mdi-file-pdf-outline</v-icon>
+                                                 </v-btn>
+                                             </template>
+                                         <span>Скачать задание</span>
+                                    </v-tooltip>
+                                </v-row>
+                            </template>
+
+                        </v-data-table>                       
+
+                    </v-card-text>
+                    <v-card-text id="cardText" v-if="!homeworkInfo">
+                            <v-simple-table>
+                                <template v-slot:default>                        
+                                    <tbody id="simpleTable">
+                                        <tr>
+                                            <td>Куратор курса еще не добавил ни одного задания</td>      
+                                        </tr>
+                                    </tbody>
+                                </template>
+                            </v-simple-table>
+                    </v-card-text>
+                    
+                </v-card>
+
+                <v-card style="padding:20px; margin:50px; margin-top:20px; margin-bottom:0px" class="mx-auto" v-if="availableHomework">
+                    <!-- Домашняя работа -->
+                    <v-card-subtitle id="cardSubtitle">Отправить выполненное задание на проверку</v-card-subtitle>
+
+        
+                    <!-- Добавление задания -->
+                    <v-card-text class="cardText" style="margin-top:40px">
+                        <v-row>
+                                <v-select
+                                    color="#4b2a86"
+                                    :items="availableHomework.rows"
+                                    dense
+                                    outlined
+                                    label="Выбрать задание"
+                                    hide-details
+                                    v-model="selectedHomework"
+                                    prepend-icon="mdi-notebook-outline"
+                                    item-text="name"
+                                    item-value="id"
+                                    item-key="item.id"
+                                ></v-select>
+                                
+                        </v-row>
+                        
+                        <v-row style="margin-top:30px">
+                            <template v-if="selectedHomework">
+                            <v-file-input
+                                label="Выберите файл с выполненным заданием"
+                                v-model="files"
+                                @change="selectFile"
+                                color="#2f1a54"
+                            ></v-file-input>
+                            </template>
+                        </v-row>
+                        <!-- Кнопка добавления документа -->
+                        <v-row justify="center" v-if="files">
+                        <v-btn
+                            class="tile-glow-right"
+                            outlined
+                            color="#2f1a54"
+                            @click="uploadFile(selectedHomework, currentId)"
+                            >
+                            Отправить задание на проверку
+                            </v-btn>
+                        </v-row>    
+                    </v-card-text>
+                </v-card>
+
+                <v-card style="padding:20px; margin:50px; margin-top:20px; margin-bottom:0px" class="mx-auto" v-if="this.havingHomework==1">
+                    <!-- Домашняя работа -->
+                    <v-card-subtitle id="cardSubtitle">Выполненные задания</v-card-subtitle>
+
+        
+                    <!-- Основная информация -->
+                    <v-card-text id="cardText" v-if="homeworkbyListenerInfo">
+                        <v-data-table
+                            :headers="homeworkbyListenerHeaders"
+                            :items="homeworkbyListenerInfo.rows"
+                            hide-default-header
+                            :items-per-page="15"
+                            class="elevation-0"
+                            :footer-props="{
+                                showFirstLastPage: true,
+                                firstIcon: 'mdi-chevron-double-left',
+                                lastIcon: 'mdi-chevron-double-right',
+                                prevIcon: 'mdi-chevron-left',
+                                nextIcon: 'mdi-chevron-right'
+                            }"
+                            item-key="item.id"
+                        >
+                            <!-- Заголовки таблицы -->
+                            <template v-slot:header="{ props: { headers } }">
+                                <thead>
+                                    <tr>
+                                        <th v-for="head in headers" v-bind:key="head" id="tableHeader">
+                                            <span>{{head.text}}</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                            </template>
+
+                           <!-- Статус -->
+                                <template v-slot:[`item.check`]="{ item }">
+                                    <h4 v-if="item.check==1" id="downloadedDoc">Работа принята</h4>
+                                    <h4 v-if="item.check==0" class="waitingDoc">В ожидании проверки</h4>
+                                    <h4 v-if="item.check==-1" class="deniedDoc">Работа не принята</h4>
+                                </template>
+
+                            <!-- файл с заданием -->
+                            <template v-slot:[`item.link`] ="{ item }">
+                                <v-row justify="center">
+                                   
+                                    <v-tooltip bottom>
+                                             <template v-slot:activator="{ on, attrs }">
+                                                 <v-btn 
+                                                     v-bind="attrs"
+                                                     v-on="on"
+                                                     icon
+                                                     @click = "downloadDoc(item.link)"
+                                                     :loading="loading"
+                                                     :disabled="loading"
+                                                     color="#2f1a54"
+                                                 > 
+                                                     <v-icon size="40">mdi-file-pdf-outline</v-icon>
+                                                 </v-btn>
+                                             </template>
+                                         <span v-if="item.check==1">Скачать проверенное задание</span>
+                                         <span v-if="item.check==0">Скачать отправленное задание</span>
+                                         <span v-if="item.check==-1">Скачать задание с замечаниями</span>
+                                    </v-tooltip>
+                                </v-row>
+                            </template>
+
+                        </v-data-table>
+                    </v-card-text>
+
+                    <!-- Если нет загруженных заданий-->
+
+                        <v-card-text id="cardText" v-if="this.havingHomeworkbyListener==0">
+                            <v-simple-table>
+                                <template v-slot:default>                        
+                                    <tbody id="simpleTable">
+                                        <tr>
+                                            <td>Вы еще не отправляли задания на проверку</td>      
+                                        </tr>
+                                    </tbody>
+                                </template>
+                            </v-simple-table>
+                        </v-card-text>
+                    
+
+                </v-card>
+
+
+            </v-card>
+            </div>
             </v-col>
         </v-row>
         <v-dialog
@@ -400,7 +660,6 @@ export default {
             finishedCoursesHeaders: [
                 { text: 'Наименование курса', value: 'name', align: 'center' },
                 { text: 'Программа курса', value: 'program', align: 'center' },
-                { text: 'Оценки', value: 'score', align: 'center' },
                 { text: 'Сертификат', value: 'certificate', align: 'center' },
                 { text: 'Процент успешности', value: 'percent', align: 'center' },
             ],
@@ -424,19 +683,78 @@ export default {
                 'Процент успешности',
                 'Сертификат'
             ],
-            
+
+            homeworkHeaders: [
+                { text: 'Тема', value: 'name', align: 'center' },
+                { text: 'Задание', value: 'link', align: 'center' },
+                { text: 'Баллы', value: 'percent', align: 'center' },
+                { text: 'Дата окончания сроков', value: 'end_date', align: 'center' },
+            ],
+
+            homeworkbyListenerHeaders: [
+                { text: 'Задание', value: 'name', align: 'center' },
+                { text: 'Файл', value: 'link', align: 'center' },
+                { text: 'Статус', value: 'check', align: 'center' },
+                
+            ],
+
+            // Загрузка и выгрузка
+            loader: null,
+            loading: false,
             files:null,
             currentFile: null,
             newDocName: null,
+
+            // Задания
+            currentCourseId: null,
+            currentCourseName: null,
+            havingHomework: 0,
+            homeworkInfo:  null,
+            selectedHomework: null,
+            havingHomeworkbyListener: 0,
+            homeworkbyListenerInfo:  null,
+            availableHomework: null,
         }
     },
 
     methods: {
+
         selectFile(file) {
-        this.currentFile = file;
+            this.currentFile = file;
         },
 
-         uploadFile(selected) { 
+        // Загрузка и выгрузка файлов
+
+        forceFIleDownload(response,link) {
+            var fileName = link;
+            var a = document.createElement("a");
+            document.body.appendChild(a);
+            var file = new Blob([response.data], {type: 'application/pdf'});
+                var fileURL = window.URL.createObjectURL(file);
+                a.href = fileURL;
+                a.download = fileName;
+                a.click();
+        },
+
+        downloadDoc(link) {
+            this.loading = true
+
+            let fullURL = '/download'
+
+            this.axios.get(fullURL, {responseType: 'arraybuffer' , params: { name: link } })
+            .then((response) => {
+                this.loading = false,
+                this.forceFIleDownload(response,link)
+            })
+            .catch((error) => {
+              this.loading = false
+              this.dialogText = "Ошибка";
+              this.showDialog();
+              
+            })  
+        },
+
+        uploadDocument(selected){
             let fullURL = '/upload'
             let formData = new FormData();
             formData.append('file', this.currentFile);
@@ -447,14 +765,37 @@ export default {
                         'Content-Type': 'multipart/form-data'
                     }
             })
-            .then((responce) => {
-              this.newDocName = responce.data;
-              this.addDoc(selected, responce.data)
+            .then((response) => {
+              this.newDocName = response.data;
+              this.addDoc(selected, response.data)
             })
             .catch((error) => {
               this.dialogText = "Ошибка";
               this.showDialog();
-              this.errors = error.data.detail
+            })  
+            this.files = null   
+            this.currentFile = null
+            this.newDocName = null
+         },
+        
+        uploadFile(selected, id) { 
+            let fullURL = '/upload'
+            let formData = new FormData();
+            formData.append('file', this.currentFile);
+            this.axios.post(fullURL,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+            })
+            .then((response) => {
+              this.newDocName = response.data;
+              this.addListenerHomework(selected, id, response.data)
+            })
+            .catch((error) => {
+              this.dialogText = "Ошибка";
+              this.showDialog();
             })  
             this.files = null   
             this.currentFile = null
@@ -466,37 +807,118 @@ export default {
             setTimeout(() => (this.dialog = false), 4000)
         },
 
-        // Документы
-
-        getDocs: function () {
-            let fullURL = '/docs/getDocsUser/'+this.currentId+'/'
+         // задания
+        
+        getAvailableHomework: function (id) {
+            let fullURL = '/homeworks/getAvailableHomework/'+id+'/'
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.docs = responce.data;
-              this.havingDocs = 1;
+            .then((response) => {
+              this.availableHomework = response.data;
             })
             .catch((error) => {
-              this.docs=null
-              this.errors = error.data.detail
+              this.availableHomework=null;
             })  
         },
-        deleteDoc: function (list) {
-            let fullURL = '/docs/deleteDoc/'+list.id;
-            
-            this.axios.delete(fullURL, {
-                id: list.id,
+
+        getHomework: function (id) {
+            let fullURL = '/homeworks/getHomeworksbyCourse/'+id+'/'
+            this.axios.get(fullURL)
+            .then((response) => {
+              this.homeworkInfo = response.data;
+              this.havingHomework = 1;
+              this.getAvailableHomework(id);
             })
-            .then((responce) => {
-              this.results = responce.data;
-              this.getDocs();
-              this.dialogText = "Документ был удалён";
+            .catch((error) => {
+              this.havingHomework = 0;
+              this.homeworkInfo=null;
+            })  
+        },
+
+        addListenerHomework(homework_id, listener_id, link){
+            let fullURL = '/homeworks/addListenerHomework'
+            
+            this.axios.post(fullURL, {
+              homework_id: homework_id,
+              listener_id: listener_id,
+              link: link,
+              status: 0,
+            })
+            .then((response) => {
+              this.results = response.data
+              this.getHomework(this.currentCourseId)
+              this.getHomeworksbyListener(listener_id, this.currentCourseId )
+              this.selectedHomework = null, 
+              this.dialogText = "Задание отправлено на проверку";
               this.showDialog();
             })
             .catch((error) => {
               this.dialogText = "Ошибка";
               this.showDialog();
-              this.errors = error.data.detail
+            })          
+        },
+
+        getHomeworksbyListener: function (id, homework_id) {
+            let fullURL = '/homeworks/getHomeworksbyListener/'+id+'/'+homework_id+'/'
+            this.axios.get(fullURL)
+            .then((response) => {
+              this.homeworkbyListenerInfo = response.data;
+              this.havingHomeworkbyListener = 1;
+            })
+            .catch((error) => {
+              this.havingHomeworkbyListener = 0;
+              this.homeworkbyListenerInfo=null;
             })  
+        },
+
+        // Документы
+
+        getDocs: function () {
+            let fullURL = '/docs/getDocsUser/'+this.currentId+'/'
+            this.axios.get(fullURL)
+            .then((response) => {
+              this.docs = response.data;
+              this.havingDocs = 1;
+            })
+            .catch((error) => {
+              this.docs=null
+            })  
+        },
+        deleteDoc: function (list) {
+            //  удаляем документ, который прислал слушатель
+
+            this.loading = true
+            let fullURL = '/delete'
+
+            this.axios.get(fullURL, {responseType: 'arraybuffer' , params: { name: list.link } })
+            .then((response) => {
+                this.loading = false
+                // затем удаляем запись о нем в базе
+
+                fullURL = '/docs/deleteDoc/'+list.id;
+                
+                this.axios.delete(fullURL, {
+                    id: list.id,
+                })
+                .then((response) => {
+                this.results = response.data;
+                this.getDocs();
+                this.dialogText = "Документ был удалён";
+                this.showDialog();
+                })
+                .catch((error) => {
+                this.dialogText = "Ошибка";
+                this.showDialog();
+                })  
+            })
+            .catch((error) => {
+              this.loading = false
+              this.dialogText = "Ошибка, документ не был удалён";
+              this.showDialog();
+              this.errors = error.data.detail
+              
+            })  
+           
+            
         },
         addDoc: function (name, link) {
             let fullURL = '/docs/addDoc/'
@@ -506,10 +928,10 @@ export default {
                 status: 0,
                 user_id: this.currentId
             })
-            .then((responce) => {
+            .then((response) => {
               this.selected = null;
               this.newDocName = null
-              this.results = responce.data;
+              this.results = response.data;
               this.getDocs();
               this.dialogText = "Документ был отправлен на проверку";
               this.showDialog();     
@@ -518,35 +940,51 @@ export default {
               this.selected = null;
               this.dialogText = "Ошибка";
               this.showDialog();
-              this.errors = error.data.detail
             })  
         },
 
         // Курсы
 
+        showCourse (list) {
+            this.havingHomework = 0;
+            this.getHomework(list.id)
+            this.getHomeworksbyListener(this.currentId, list.id)
+            this.currentCourseId = list.id;
+            this.currentCourseName = list.name;
+            if (this.currentCourseId!=-1){
+                let fullURL = '/listeners_courses/getListenerCourseByCourse/'+this.currentCourseId+'/'
+                this.axios.get(fullURL)
+            .then((response) => {
+              this.courseInfo = response.data;
+            })
+            .catch((error) => {
+              this.courseInfo=null;
+              this.errors = error
+            })
+            }    
+        },
+
         getCurrentCourses: function () {
             let fullURL = '/listeners_courses/getCurrentCourseByListener/'+this.currentId+'/'
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.currentCourses = responce.data;
+            .then((response) => {
+              this.currentCourses = response.data;
               this.havingCurrentCourses = 1;
             })
             .catch((error) => {
               this.currentCourses=null
-              this.errors = error.data.detail
             })  
  
         },
         getFinishedCourses: function () {
             let fullURL = '/listeners_courses/getFinishedCourseByListener/'+this.currentId+'/'
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.finishedCourses = responce.data;
+            .then((response) => {
+              this.finishedCourses = response.data;
               this.havingFinishedCourses = 1;
             })
             .catch((error) => {
               this.finishedCourses=null
-              this.errors = error.data.detail
             })  
         },
     },
@@ -644,7 +1082,11 @@ export default {
     .tile-glow-right{
         margin:20px;
     }
-    .tile-glow-right:hover{
+    .tile-glow-right2{
+        margin-bottom:20px;
+        margin-top:10px;
+    }
+    .tile-glow-right:hover, .tile-glow-right2:hover{
     box-shadow: 0 0 10px #2f1a54;
     transition-duration: 0.3s;
     }

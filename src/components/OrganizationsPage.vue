@@ -97,7 +97,7 @@
                 </form>
                 </div>
                 <!-- Изменение данных организации -->
-                <div v-if="!newIsShow" v-key="currentId">
+                <div v-if="!newIsShow" v-key="currentUserId">
                     <v-row justify="right">
                                 <v-col cols=12 id="closeInfo">
                                         <template>
@@ -426,7 +426,7 @@ export default {
             newDirector: '',
             newPhone: '',
             newEmail: '',
-            currentId: -1,
+            currentUserId: -1,
             currentName: '',
             currentDirector: '',
             currentPhone: '',
@@ -454,11 +454,11 @@ export default {
 
         // Загрузка и выгрузка файлов
 
-        forceFIleDownload(responce,link) {
+        forceFIleDownload(response,link) {
             var fileName = link;
             var a = document.createElement("a");
             document.body.appendChild(a);
-            var file = new Blob([responce.data], {type: 'application/pdf'});
+            var file = new Blob([response.data], {type: 'application/pdf'});
                 var fileURL = window.URL.createObjectURL(file);
                 a.href = fileURL;
                 a.download = fileName;
@@ -471,9 +471,9 @@ export default {
             let fullURL = '/download'
 
             this.axios.get(fullURL, {responseType: 'arraybuffer' , params: { name: link } })
-            .then((responce) => {
+            .then((response) => {
                 this.loading = false,
-                this.forceFIleDownload(responce,link)
+                this.forceFIleDownload(response,link)
             })
             .catch((error) => {
               this.loading = false
@@ -499,9 +499,9 @@ export default {
                         'Content-Type': 'multipart/form-data'
                     }
             })
-            .then((responce) => {
-              this.newDocName = responce.data;
-              this.addCourse(selected, users, responce.data);
+            .then((response) => {
+              this.newDocName = response.data;
+              this.addCourse(selected, users, response.data);
             })
             .catch((error) => {
               this.dialogText = "Ошибка";
@@ -519,8 +519,8 @@ export default {
             let fullURL = '/organizations/getOrganizations'
 
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.organizations = responce.data;
+            .then((response) => {
+              this.organizations = response.data;
             })
             .catch((error) => {
               this.errors = error.data.detail
@@ -529,14 +529,14 @@ export default {
         editOrganization () {
             let fullURL = '/organizations/editOrganization'
             this.axios.post(fullURL, {
-              id: this.currentId,  
+              id: this.currentUserId,  
               name: this.currentName,
               director: this.currentDirector,
               phone: this.currentPhone,
               email: this.currentEmail,
             })
-            .then((responce) => {
-              this.results = responce.data;
+            .then((response) => {
+              this.results = response.data;
               this.getOrganizations();
               this.getUsers();
               this.dialogText = "Данные об организации изменены";
@@ -549,7 +549,7 @@ export default {
             })            
         },
         showOrganization (list) {
-            this.currentId = list.id;
+            this.currentUserId = list.id;
             this.currentName = list.name;
             this.currentDirector = list.director;
             this.currentPhone = list.phone;
@@ -575,8 +575,8 @@ export default {
               phone: this.newPhone,
               email: this.newEmail,
             })
-            .then((responce) => {
-              this.results = responce.data;
+            .then((response) => {
+              this.results = response.data;
               this.getOrganizations();
               this.newName = '';
               this.newDirector = '';
@@ -598,8 +598,8 @@ export default {
             let fullURL = '/users/getUsers'
 
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.users = responce.data;
+            .then((response) => {
+              this.users = response.data;
             })
             .catch((error) => {
               this.errors = error.data.detail
@@ -612,10 +612,10 @@ export default {
             let fullURL = '/invoices/editInvoice'
             this.axios.post(fullURL, {
               id: id,
-              link: String(Math.random().toString(36).substring(2, 15))+'.pdf',
+              link: 'uploaded',
             })
-            .then((responce) => {
-              this.results = responce.data;
+            .then((response) => {
+              this.results = response.data;
               this.getCourses();
               this.dialogText = "Счёт успешно добавлен";
               this.showDialog();
@@ -636,8 +636,8 @@ export default {
                 amount: item.amount,
                 agreement_id: item.agreement_id
             })
-            .then((responce) => {
-              this.results = responce.data;
+            .then((response) => {
+              this.results = response.data;
               this.getCourses();
               this.dialogText = "Новый счёт успешно создан";
               this.showDialog();
@@ -656,20 +656,20 @@ export default {
                     this.axios.post(fullURL, {
                         link: link,
                         status: 0,
-                        organization_id: this.currentId,
+                        organization_id: this.currentUserId,
                         course_id: id,
                         partnership_agreement_id: 0
                     })
-                    .then((responce) => {
+                    .then((response) => {
                     this.selectedCourse = null;
                     this.newDocName = null
-                    this.results = responce.data;
-                    this.results = responce.data;
+                    this.results = response.data;
+                    this.results = response.data;
                     let amount = null;
                         this.courseTypes.rows.forEach(element => {
                             
                             if (element.id==id) 
-                                amount = element.price;
+                                amount = element.price * this.selectedUsers.length;
                         });
 
                         let fullURL2 = '/invoices/addInvoice/'+amount+'/'
@@ -677,16 +677,16 @@ export default {
                         this.axios.post(fullURL2, { 
                             amount: amount
                         })
-                        .then((responce) => {
-                            this.results = responce.data;
+                        .then((response) => {
+                            this.results = response.data;
                             selectedUsers.forEach(element=> {
                             let fullURL3 = '/listeners_agreements/addListenerAgreement/'+element.id+'/'
 
                             this.axios.post(fullURL3, {
                                 user_id: element.id,
                             })
-                            .then((responce) => {
-                            this.results = responce.data;
+                            .then((response) => {
+                            this.results = response.data;
                             this.courseSelected = null,
                             this.selectedUsers = [],
                             this.getCourses();
@@ -706,7 +706,7 @@ export default {
                     .catch((error) => {
                     this.selectedCourse = null;
                     this.newDocName = null
-                    this.results = responce.data;
+                    this.results = response.data;
                     this.dialogText = "Ошибка";
                     this.errors = error.data.detail
                     })  
@@ -721,19 +721,19 @@ export default {
             let fullURL = '/courses/getCoursesByDate'
 
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.courseTypes = responce.data;
+            .then((response) => {
+              this.courseTypes = response.data;
             })
             .catch((error) => {
               this.errors = error.data.detail
             })
         },
         getCourses: function () {
-            if (this.currentId!=-1){
-                let fullURL = '/agreements/getAgreementByOrganization/'+this.currentId+'/'
+            if (this.currentUserId!=-1){
+                let fullURL = '/agreements/getAgreementByOrganization/'+this.currentUserId+'/'
                 this.axios.get(fullURL)
-            .then((responce) => {
-              this.courses = responce.data;
+            .then((response) => {
+              this.courses = response.data;
             })
             .catch((error) => {
               this.courses=null;

@@ -15,11 +15,13 @@
                             @click:row="showListener"
                             style="cursor:pointer"
                             item-key="item.id"
+                            color="#2f1a54"
                             >
                             <template v-slot:top>
                                 <v-text-field
                                 v-model="search"
                                 label="Поиск по слушателям"
+                                color="#2f1a54"
                                 ></v-text-field>
                             </template>    
                         </v-data-table>
@@ -171,7 +173,7 @@
                 </div>
               
                 <!-- Изменение данных слушателя -->
-                <div v-if="!newIsShow" v-key="currentId" item-key="currentId">
+                <div v-if="!newIsShow" v-key="currentUserId" item-key="currentUserId">
                     <v-row justify="right">
                                 <v-col cols=12 id="closeInfo">
                                         <template>
@@ -446,7 +448,7 @@
                         </v-card-text>
                         </v-card>
                     </div>
-                    <div v-if="docs" v-key="currentId">
+                    <div v-if="docs" v-key="currentUserId">
                         <v-card style="padding:20px; margin:50px; margin-top:20px; margin-bottom:0px" class="mx-auto">
                         <!-- Загруженные документы -->
                         <v-card-subtitle class="cardSubtitle">Загруженные документы</v-card-subtitle>
@@ -544,7 +546,7 @@
                         </v-card-text>
                         </v-card>
                     </div>
-                    <div v-if="courses" v-key="currentId">
+                    <div v-if="courses"  v-key="courses">
                         <v-card style="margin:50px; margin-top:20px; margin-bottom:0px" class="mx-auto">
                         <!-- Загруженные документы -->
                         <v-card-subtitle class="cardSubtitle">Информация о записи на курсы</v-card-subtitle>
@@ -602,7 +604,8 @@
                                 
                                  <!-- Счёт -->
                                 <template v-slot:[`item.invoices_link`]="{ item }">
-                                    <v-row  v-if="item.status==0 && item.invoice_status==0 && item.organization_id==0" justify="center" >
+                                    
+                                    <v-row  v-if="item.status==0 && item.invoice_status==0 && item.organization_id==0" justify="center">
                                         <v-tooltip bottom>
                                         <template v-slot:activator="{ on, attrs }">
                                             <v-btn 
@@ -614,7 +617,22 @@
                                                 <v-icon id="addInvoice" size="45">mdi-plus</v-icon>
                                             </v-btn>
                                         </template>
-                                        <span>Добавить счёт</span>
+                                        <span>Добавить</span>
+                                        </v-tooltip>
+                                    </v-row>
+
+                                    <v-row  v-if="item.status==0 && item.invoice_status==0 && item.organization_id!=0" justify="center" >
+                                        <v-tooltip bottom>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn 
+                                                v-bind="attrs"
+                                                v-on="on"
+                                                icon
+                                            > 
+                                                <v-icon id="addInvoice" size="35">mdi-bank-plus</v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>Добавьте счёт в разделе Организации</span>
                                         </v-tooltip>
                                     </v-row>
 
@@ -630,7 +648,7 @@
                                                 <v-icon id="addInvoice" size="35">mdi-repeat</v-icon>
                                             </v-btn>
                                         </template>
-                                        <span>Сформировать новый счёт</span>
+                                        <span>Сформировать новый</span>
                                         </v-tooltip>
                                     </v-row>
 
@@ -642,49 +660,58 @@
                                                 v-on="on"
                                                 icon
                                             > 
-                                                <v-icon size="35" id="addInvoice">mdi-check</v-icon>
+                                                <v-icon id="addInvoice" size="35">mdi-check</v-icon>
                                             </v-btn>
                                         </template>
                                         <span>Счёт оплачен</span>
                                         </v-tooltip>
                                     </v-row>
-                                    
+
                                     <v-row  v-if="item.status==1 && item.organization_id!=0" justify="center" >
                                         <v-tooltip bottom>
-                                            <template v-slot:activator="{ on }">
-                                                <v-icon size=35 class="downloadedDoc" v-on="on"> mdi-bank </v-icon>  
-                                            </template>
-                                            <span>Счёт оплачен организацией</span>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn 
+                                                v-bind="attrs"
+                                                v-on="on"
+                                                icon
+                                            > 
+                                                <v-icon id="addInvoice" size="35">mdi-bank</v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>Счёт оплачен организацией</span>
                                         </v-tooltip>
                                     </v-row>
 
-                                    <v-row  v-if="item.status==0 && item.organization_id!=0" justify="center" >
+                                    <v-row  v-if="item.status==-1 && item.organization_id==0" justify="center" >
                                         <v-tooltip bottom>
-                                            <template v-slot:activator="{ on }">
-                                                <v-icon size=35 class="downloadedDoc" v-on="on"> mdi-bank-plus </v-icon>  
-                                            </template>
-                                            <span>Загрузите платёж в разделе "Организации"</span>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn 
+                                                v-bind="attrs"
+                                                v-on="on"
+                                                icon
+                                            > 
+                                                <v-icon size="35"> mdi-repeat-off </v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>Платёж просрочен</span>
                                         </v-tooltip>
                                     </v-row>
 
                                     <v-row  v-if="item.status==-1 && item.organization_id!=0" justify="center" >
                                         <v-tooltip bottom>
-                                            <template v-slot:activator="{ on }">
-                                                <v-icon size=35 v-on="on"> mdi-bank-remove </v-icon>  
-                                            </template>
-                                            <span>Платёж был просрочен организацией</span>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn 
+                                                v-bind="attrs"
+                                                v-on="on"
+                                                icon
+                                            > 
+                                                <v-icon size="35"> mdi-bank-remove </v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>Платёж просрочен организацией</span>
                                         </v-tooltip>
                                     </v-row>
                                     
-                                    
-                                    <v-row  v-if="item.status==-1 && item.organization_id==0" justify="center" >
-                                        <v-tooltip bottom>
-                                            <template v-slot:activator="{ on }">
-                                                <v-icon size=35 v-on="on"> mdi-repeat-off </v-icon>  
-                                            </template>
-                                            <span>Платёж был просрочен слушателем</span>
-                                        </v-tooltip>
-                                    </v-row>
                                 </template>
                                
 
@@ -853,7 +880,7 @@ export default {
             newPhone: '',
             newEmail: '',
             newRole: '3',
-            currentId: -1,
+            currentUserId: -1,
             currentFirstName: '',
             currentLastName: '',
             currentPatronymic: '',
@@ -892,11 +919,11 @@ export default {
 
         // Загрузка и выгрузка файлов
 
-        forceFIleDownload(responce,link) {
+        forceFIleDownload(response,link) {
             var fileName = link;
             var a = document.createElement("a");
             document.body.appendChild(a);
-            var file = new Blob([responce.data], {type: 'application/pdf'});
+            var file = new Blob([response.data], {type: 'application/pdf'});
                 var fileURL = window.URL.createObjectURL(file);
                 a.href = fileURL;
                 a.download = fileName;
@@ -909,9 +936,9 @@ export default {
             let fullURL = '/download'
 
             this.axios.get(fullURL, {responseType: 'arraybuffer' , params: { name: link } })
-            .then((responce) => {
+            .then((response) => {
                 this.loading = false,
-                this.forceFIleDownload(responce,link)
+                this.forceFIleDownload(response,link)
             })
             .catch((error) => {
               this.loading = false
@@ -937,12 +964,12 @@ export default {
                         'Content-Type': 'multipart/form-data'
                     }
             })
-            .then((responce) => {
-              this.newDocName = responce.data;
+            .then((response) => {
+              this.newDocName = response.data;
               if (type=="doc")
-                this.addDoc(selected, responce.data);
+                this.addDoc(selected, response.data);
               else if(type=="agreement")
-                this.addCourse(selected, responce.data);
+                this.addCourse(selected, response.data);
             })
             .catch((error) => {
               this.dialogText = "Ошибка";
@@ -960,8 +987,8 @@ export default {
             let fullURL = '/docs/getAllDocsStatus0'
 
             this.axios.get(fullURL)
-            .then((responce) => {
-                this.docsStatus0 = responce.data;
+            .then((response) => {
+                this.docsStatus0 = response.data;
             })
             .catch((error) => {
               this.docsStatus0 = null;
@@ -970,11 +997,11 @@ export default {
         },
 
         ifDocs: function() {
-            if (this.currentId!=-1){
-                let fullURL = '/docs/ifDocsUser/'+this.currentId+'/'
+            if (this.currentUserId!=-1){
+                let fullURL = '/docs/ifDocsUser/'+this.currentUserId+'/'
                 this.axios.get(fullURL)
-            .then((responce) => {
-              return responce.data;
+            .then((response) => {
+              return response.data;
             })
             .catch((error) => {
               this.errors = error
@@ -982,11 +1009,11 @@ export default {
             }    
         },
         getDocs: function () {
-            if (this.currentId!=-1){
-                let fullURL = '/docs/getDocsUser/'+this.currentId+'/'
+            if (this.currentUserId!=-1){
+                let fullURL = '/docs/getDocsUser/'+this.currentUserId+'/'
                 this.axios.get(fullURL)
-            .then((responce) => {
-              this.docs = responce.data;
+            .then((response) => {
+              this.docs = response.data;
 
             })
             .catch((error) => {
@@ -1005,8 +1032,8 @@ export default {
                 status: -1,
                 user_id: list.user_id
             })
-            .then((responce) => {
-              this.results = responce.data;
+            .then((response) => {
+              this.results = response.data;
               this.getDocs();
               this.getDocsStatus0();
               this.dialogText = "Документ отклонён";
@@ -1028,8 +1055,8 @@ export default {
                 status: 1,
                 user_id: list.user_id
             })
-            .then((responce) => {
-              this.results = responce.data;
+            .then((response) => {
+              this.results = response.data;
               this.getDocs();
               this.getDocsStatus0();
               this.dialogText = "Документ принят";
@@ -1049,12 +1076,12 @@ export default {
                     name: name,
                     link: link,
                     status: 1,
-                    user_id: this.currentId
+                    user_id: this.currentUserId
                 })
-                .then((responce) => {
+                .then((response) => {
                 this.selected = null;
                 this.newDocName = null
-                this.results = responce.data;
+                this.results = response.data;
                 this.getDocs();
                 this.getDocsStatus0();
                 this.dialogText = "Документ успешно добавлен";
@@ -1077,11 +1104,11 @@ export default {
             let fullURL = '/invoices/editInvoice'
             this.axios.post(fullURL, {
               id: id,
-              link: String(Math.random().toString(36).substring(2, 15))+'.pdf',
+              link: 'uploaded',
             })
-            .then((responce) => {
-              this.results = responce.data;
-              this.getCourses();
+            .then((response) => {
+              this.results = response.data;
+              this.getCourses(this.currentUserId);
               this.dialogText = "Счёт успешно добавлен";
               this.showDialog();
             })
@@ -1099,9 +1126,9 @@ export default {
                 amount: item.amount,
                 agreement_id: item.agreement_id
             })
-            .then((responce) => {
-              this.results = responce.data;
-              this.getCourses();
+            .then((response) => {
+              this.results = response.data;
+              this.getCourses(this.currentUserId);
               this.dialogText = "Новый счёт успешно создан";
               this.showDialog();
             })
@@ -1122,10 +1149,10 @@ export default {
                     course_id: id,
                     partnership_agreement_id: 0
                 })
-                .then((responce) => {
+                .then((response) => {
                     this.selectedCourse = null;
                     this.newDocName = null
-                    this.results = responce.data;
+                    this.results = response.data;
                     let amount = null;
                     this.courseTypes.rows.forEach(element => {
                         if (element.id==id) 
@@ -1137,16 +1164,16 @@ export default {
                     this.axios.post(fullURL2, { 
                         amount: amount
                     })
-                    .then((responce) => {
-                        this.results = responce.data;
-                        let fullURL3 = '/listeners_agreements/addListenerAgreement/'+this.currentId+'/'
+                    .then((response) => {
+                        this.results = response.data;
+                        let fullURL3 = '/listeners_agreements/addListenerAgreement/'+this.currentUserId+'/'
                     
                         this.axios.post(fullURL3, {
-                            user_id: this.currentId,
+                            user_id: this.currentUserId,
                         })
-                        .then((responce) => {
-                            this.results = responce.data;
-                            this.getCourses();
+                        .then((response) => {
+                            this.results = response.data;
+                            this.getCourses(this.currentUserId);
                             this.dialogText = "Соглашение успешно добавлено";
                         })
                         .catch((error) => {
@@ -1173,19 +1200,19 @@ export default {
             let fullURL = '/courses/getCoursesByDate'
 
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.courseTypes = responce.data;
+            .then((response) => {
+              this.courseTypes = response.data;
             })
             .catch((error) => {
               this.errors = error.data.detail
             })
         },
-        getCourses: function () {
-            if (this.currentId!=-1){
-                let fullURL = '/listeners_agreements/getListenerAgreementByListener/'+this.currentId+'/'
+        getCourses: function (id) {
+            if (this.currentUserId!=-1){
+                let fullURL = '/listeners_agreements/getListenerAgreementByListener/'+id+'/'
                 this.axios.get(fullURL)
-            .then((responce) => {
-              this.courses = responce.data;
+            .then((response) => {
+              this.courses = response.data;
 
             })
             .catch((error) => {
@@ -1201,8 +1228,8 @@ export default {
             let fullURL = '/users/getUsers'
 
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.users = responce.data;
+            .then((response) => {
+              this.users = response.data;
             })
             .catch((error) => {
               this.errors = error.data.detail
@@ -1223,8 +1250,8 @@ export default {
               password: this.newPassword,
               role_id: this.newRole,
             })
-            .then((responce) => {
-              this.results = responce.data;
+            .then((response) => {
+              this.results = response.data;
               this.getUsers();
               this.newFirstName = '';
               this.newLastName = '';
@@ -1247,7 +1274,7 @@ export default {
         editListenerWithoutPassword () {
             let fullURL = '/users/editUserWithoutPassword'
             this.axios.post(fullURL, {
-              id: this.currentId,  
+              id: this.currentUserId,  
               first_name: this.currentFirstName,
               last_name: this.currentLastName,
               patronymic: this.currentPatronymic,
@@ -1256,8 +1283,8 @@ export default {
               login: this.currentLogin,
               role_id: this.currentRole,
             })
-            .then((responce) => {
-              this.results = responce.data;
+            .then((response) => {
+              this.results = response.data;
               this.getUsers();
               this.dialogText = "Данные пользователя изменены";
               this.showDialog();
@@ -1271,7 +1298,7 @@ export default {
         editListener () {
             let fullURL = '/users/editUser'
             this.axios.post(fullURL, {
-              id: this.currentId,  
+              id: this.currentUserId,  
               first_name: this.currentFirstName,
               last_name: this.currentLastName,
               patronymic: this.currentPatronymic,
@@ -1281,8 +1308,8 @@ export default {
               password: this.currentPassword,
               role_id: this.currentRole,
             })
-            .then((responce) => {
-              this.results = responce.data;
+            .then((response) => {
+              this.results = response.data;
               this.getUsers();
               this.dialogText = "Данные пользователя изменены";
               this.showDialog();
@@ -1294,7 +1321,7 @@ export default {
             })            
         },
         showListener (list) {
-            this.currentId = list.id;
+            this.currentUserId = list.id;
             this.currentFirstName = list.first_name;
             this.currentLastName = list.last_name;
             this.currentPatronymic = list.patronymic;
@@ -1306,7 +1333,7 @@ export default {
             this.newIsShow = false;
             this.rightHeader = 'Данные о слушателе';
             this.getDocs();
-            this.getCourses();
+            this.getCourses(list.id);
         },
         hideListener () {
             this.newIsShow = true;

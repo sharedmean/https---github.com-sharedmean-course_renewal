@@ -321,17 +321,7 @@
                             </v-select>
                         </v-col>
                     </v-row>
-                    <!-- Кнопка добавления документа -->
-                    <v-row justify="center" v-if="files">
-                    <v-btn
-                        class="tile-glow-right"
-                        outlined
-                        color="#2f1a54"
-                        @click="uploadFile()"
-                        >
-                        Загрузить программу курса
-                        </v-btn>
-                    </v-row>   
+                    
 
                     <v-row justify="center">
                        <v-btn
@@ -1050,8 +1040,11 @@ export default {
         return {
             row: null,
             courseType: 0,
+
+            // диалоговое окно
             dialog: false,
             dialogText: null,
+
             selectedTutor: null,
             tutors: null,
             menu2: false,
@@ -1136,11 +1129,11 @@ export default {
 
         // Загрузка и выгрузка файлов
 
-        forceFIleDownload(responce,link) {
+        forceFIleDownload(response,link) {
             var fileName = link;
             var a = document.createElement("a");
             document.body.appendChild(a);
-            var file = new Blob([responce.data], {type: 'application/pdf'});
+            var file = new Blob([response.data], {type: 'application/pdf'});
                 var fileURL = window.URL.createObjectURL(file);
                 a.href = fileURL;
                 a.download = fileName;
@@ -1153,9 +1146,9 @@ export default {
             let fullURL = '/download'
 
             this.axios.get(fullURL, {responseType: 'arraybuffer' , params: { name: link } })
-            .then((responce) => {
+            .then((response) => {
                 this.loading = false,
-                this.forceFIleDownload(responce,link)
+                this.forceFIleDownload(response,link)
             })
             .catch((error) => {
               this.loading = false
@@ -1182,8 +1175,8 @@ export default {
                             'Content-Type': 'multipart/form-data'
                         }
                 })
-                .then((responce) => {
-                this.editCourse(id, name, hours, amount, form, start, end, tutor, responce.data)
+                .then((response) => {
+                this.editCourse(id, name, hours, amount, form, start, end, tutor, response.data)
                 })
                 .catch((error) => {
                 this.dialogText = "Ошибка";
@@ -1214,8 +1207,8 @@ export default {
               program: "",
               schedule: "",
             })
-            .then((responce) => {
-              this.results = responce.data
+            .then((response) => {
+              this.results = response.data
               this.getUpcomingCourses()
               this.getCurrentCourses()
               this.getFinishedCourses() 
@@ -1250,18 +1243,16 @@ export default {
               program: link,
               schedule: "",
             })
-            .then((responce) => {
+            .then((response) => {
               this.getUpcomingCourses()
               this.getCurrentCourses()
               this.getFinishedCourses() 
-              this.results = responce.data;
               this.dialogText = "Данные курса изменены";
               this.showDialog();
               this.getUsers();
             })
             .catch((error) => {
-              alert(error.data.detail)
-              this.dialogText = "Ошибка";
+              //this.dialogText = "Ошибка";
               this.showDialog();
               this.errors = error.data.detail
             })            
@@ -1269,7 +1260,7 @@ export default {
         deleteCourse (id) {
             let fullURL = '/courses/deleteCourse/'+id+'/'
             this.axios.delete(fullURL)
-            .then((responce) => {
+            .then((response) => {
               this.upcomingId = -1
               this.upcomingName = null
               this.courseType = null
@@ -1284,7 +1275,7 @@ export default {
               this.getFinishedCourses() 
               this.dialogText = "Курс успешно удалён";
               this.showDialog();
-              this.results = responce.data;
+              this.results = response.data;
               
             })
             .catch((error) => {
@@ -1297,8 +1288,8 @@ export default {
         getUpcomingCourses: function () {
             let fullURL = '/courses/getUpcomingCourses'
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.upcomingCourses = responce.data;
+            .then((response) => {
+              this.upcomingCourses = response.data;
               this.havingUpcomingCourses = 1;
             })
             .catch((error) => {
@@ -1310,8 +1301,8 @@ export default {
         getCurrentCourses: function () {
             let fullURL = '/courses/getCurrentCourses'
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.currentCourses = responce.data;
+            .then((response) => {
+              this.currentCourses = response.data;
               this.havingCurrentCourses = 1;
             })
             .catch((error) => {
@@ -1323,8 +1314,8 @@ export default {
         getFinishedCourses: function () {
             let fullURL = '/courses/getFinishedCourses'
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.finishedCourses = responce.data;
+            .then((response) => {
+              this.finishedCourses = response.data;
               this.havingFinishedCourses = 1;
             })
             .catch((error) => {
@@ -1352,13 +1343,13 @@ export default {
             if (this.upcomingId!=-1){
                 let fullURL = '/listeners_courses/getCountListenerCourseByCourse/'+this.upcomingId+'/'
                 this.axios.get(fullURL)
-                    .then((responce1) => {
-                        if(responce1.data.rows[0].listeners_count != 0)
+                    .then((response1) => {
+                        if(response1.data.rows[0].listeners_count != 0)
                         {
                             let fullURL = '/listeners_courses/getListenerCourseByCourse/'+this.upcomingId+'/'
                             this.axios.get(fullURL)
-                                .then((responce) => {
-                                    this.upcomingCourseInfo = responce.data;
+                                .then((response) => {
+                                    this.upcomingCourseInfo = response.data;
                                     this.havingListeners = 1;
                                     this.courseInfo=null;
                                     this.finishedCourseInfo=null;
@@ -1400,13 +1391,13 @@ export default {
             if (this.currentId!=-1){
                 let fullURL = '/listeners_courses/getCountListenerCourseByCourse/'+this.currentId+'/'
                 this.axios.get(fullURL)
-                    .then((responce1) => {
-                        if(responce1.data.rows[0].listeners_count != 0)
+                    .then((response1) => {
+                        if(response1.data.rows[0].listeners_count != 0)
                         {
                             let fullURL = '/listeners_courses/getListenerCourseByCourse/'+this.currentId+'/'
                             this.axios.get(fullURL)
-                                .then((responce) => {
-                                    this.courseInfo = responce.data;
+                                .then((response) => {
+                                    this.courseInfo = response.data;
                                     this.havingListeners = 1;
                                     this.upcomingCourseInfo=null;
                                     this.finishedCourseInfo=null;
@@ -1448,13 +1439,13 @@ export default {
             if (this.finishedId!=-1){
                 let fullURL = '/listeners_courses/getCountListenerCourseByCourse/'+this.finishedId+'/'
                 this.axios.get(fullURL)
-                    .then((responce1) => {
-                        if(responce1.data.rows[0].listeners_count != 0)
+                    .then((response1) => {
+                        if(response1.data.rows[0].listeners_count != 0)
                         {
                             let fullURL = '/listeners_courses/getListenerCourseByCourse/'+this.finishedId+'/'
                             this.axios.get(fullURL)
-                                .then((responce) => {
-                                    this.finishedCourseInfo = responce.data;
+                                .then((response) => {
+                                    this.finishedCourseInfo = response.data;
                                     this.havingListeners = 1;
                                     this.courseInfo=null;
                                     this.upcomingCourseInfo=null;
@@ -1494,8 +1485,8 @@ export default {
         getTutors: function () {
             let fullURL = '/users/getTutors'
             this.axios.get(fullURL)
-            .then((responce) => {
-              this.tutors = responce.data;
+            .then((response) => {
+              this.tutors = response.data;
             })
             .catch((error) => {
               this.errors = error.data.detail

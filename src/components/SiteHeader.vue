@@ -25,12 +25,6 @@
                     Личный кабинет преподавателя
                 </v-tab>
 
-                <v-tab 
-                id="nav-item"
-                v-if="$store.getters.getProfile.role_id == 3 || $store.getters.getProfile.role_id == 2">
-                    Переход в Moodle
-                </v-tab>
-
                 <v-tab id="nav-item"
                 @click="$router.push({name: 'users'})"
                 v-if="$store.getters.getProfile.role_id == 1">
@@ -103,6 +97,7 @@ export default {
         logout: function () {
             this.$store.dispatch(AUTH_LOGOUT)
                 .then(() => {
+                    location.reload();
                     this.$router.push( {name: 'main'} );
                 })
         }
